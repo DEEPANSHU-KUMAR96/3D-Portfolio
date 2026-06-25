@@ -19,8 +19,8 @@ const Computers = ({ isMobile }) => {
       <pointLight intensity={1} />
       <primitive
         object={computer.scene}
-        scale={isMobile ? 0.55 : 0.75}
-        position={isMobile ? [0, -1.9, -1.5] : [0, -3.25, -1.5]}
+        scale={0.75}
+        position={[0, -3.25, -1.5]}
         rotation={[-0.01, -0.2, -0.1]}
       />
     </mesh>
@@ -28,28 +28,29 @@ const Computers = ({ isMobile }) => {
 };
 
 const ComputersCanvas = () => {
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(true);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 768px)");
-    setIsMobile(mediaQuery.matches);
-    const handler = (e) => setIsMobile(e.matches);
-    mediaQuery.addEventListener("change", handler);
-    return () => mediaQuery.removeEventListener("change", handler);
+    const mobile = window.innerWidth <= 768 ||
+      /Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i.test(navigator.userAgent);
+    setIsMobile(mobile);
+    setIsReady(true);
   }, []);
+
+  // Not ready yet — show nothing (prevents hydration mismatch)
+  if (!isReady) return null;
+
+  // Real mobile device — skip Canvas completely to prevent WebGL crash
+  if (isMobile) return null;
 
   return (
     <Canvas
       frameloop="demand"
       shadows
-      dpr={[1, isMobile ? 1 : 1.5]}
+      dpr={[1, 1.5]}
       camera={{ position: [20, 3, 5], fov: 25 }}
-      gl={{
-        preserveDrawingBuffer: true,
-        antialias: !isMobile,
-        powerPreference: "high-performance",
-      }}
-      style={{ width: "100%", height: "100%" }}
+      gl={{ preserveDrawingBuffer: true }}
     >
       <Suspense fallback={<CanvasLoader />}>
         <OrbitControls
@@ -57,7 +58,7 @@ const ComputersCanvas = () => {
           maxPolarAngle={Math.PI / 2}
           minPolarAngle={Math.PI / 2}
         />
-        <Computers isMobile={isMobile} />
+        <Computers isMobile={false} />
       </Suspense>
       <Preload all />
     </Canvas>
